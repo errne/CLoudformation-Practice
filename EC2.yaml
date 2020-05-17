@@ -22,16 +22,43 @@ Parameters:
     Type: AWS::EC2::VPC::Id
     Description: Choose which VPC the security groups should be deployed to
     Default: vpc-769ba010
-
-
   LatestAmiId:
     Type:  'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
 Resources:
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Allow some services to be accessed
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+        - arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess
+      RoleName: "Practice-instance-role"
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: "Practice-profile"
+      Roles:
+      - !Ref "InstanceRole"
+
   EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref 'InstanceType'
+      InstanceProfile: !Ref 'InstanceProfile'
       SecurityGroups: [!Ref 'InstanceSecurityGroup']
       KeyName: !Ref 'KeyName'
       ImageId: !Ref 'LatestAmiId'
@@ -42,8 +69,13 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
+          exec > > (tee /var/log/userdata.log|log -t user-data -s 2>/dev/console) 2>&1
+
           yum install -y python3
           amazon-linux-extras install ansible2
+
+          date
+          echo "The End"
 
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
