@@ -42,7 +42,8 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          yum install ansible
+          yum install -y python3
+          amazon-linux-extras install ansible2
 
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
