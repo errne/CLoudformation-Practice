@@ -52,7 +52,7 @@ Resources:
     Properties:
       InstanceProfileName: "Practice-profile"
       Roles:
-      - !Ref "InstanceRole"R
+      - !Ref "InstanceRole"
 
   EC2Instance:
     Type: AWS::EC2::Instance
