@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  myImageId:
+    Type: AWS::EC2::Image::Id
+Resources:
+  PracticeLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: CF-Practice-template
+      LaunchTemplateData:
+        BlockDeviceMappings:
+          - Ebs:
+              VolumeSize: 10
+              VolumeType: gp2
+              DeleteOnTermination: true
+              Encrypted: true
+            DeviceName: /dev/xvdcz
+        ImageId: !Ref myImageId
+        InstanceType: t2.micro
+        KeyName: spraktas.pem
+        Monitoring:
+          Enabled: false
+        SecurityGroupIds:
+          -
+
+Type: AWS::AutoScaling::AutoScalingGroup
+Properties:
+  AutoScalingGroupName: CF-Practice
+  Cooldown: String
+  DesiredCapacity: 1
+  MaxSize: 2
+  MinSize: 0
+  HealthCheckGracePeriod: 350
+  HealthCheckType: ELB
+  LaunchConfigurationName: !Ref PracticeLaunchTemplate
+  LaunchTemplate:
+    LaunchTemplateSpecification
+  LoadBalancerNames:
+    - String
+  ServiceLinkedRoleARN: String
+  Tags:
+    -
+      Key: Role
+      Value: Test Instance
+  TargetGroupARNs:
+    - String
+  TerminationPolicies:
+    - OldestInstance
+  VPCZoneIdentifier:
+    - subnet-b21aace8
+    - subnet-ca266182
+    - subnet-f2bcc894
