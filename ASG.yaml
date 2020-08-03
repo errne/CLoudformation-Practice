@@ -1,8 +1,20 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
-  myImageId:
-    Type: AWS::EC2::Image::Id
+  LatestAmiId:
+    Type:  'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
 Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref 'SSHLocation'
+
   PracticeLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
@@ -15,38 +27,39 @@ Resources:
               DeleteOnTermination: true
               Encrypted: true
             DeviceName: /dev/xvdcz
-        ImageId: !Ref myImageId
+        ImageId: !Ref LatestAmiId
         InstanceType: t2.micro
         KeyName: spraktas.pem
         Monitoring:
           Enabled: false
         SecurityGroupIds:
-          -
+          - !Ref InstanceSecurityGroup
 
-Type: AWS::AutoScaling::AutoScalingGroup
-Properties:
-  AutoScalingGroupName: CF-Practice
-  Cooldown: String
-  DesiredCapacity: 1
-  MaxSize: 2
-  MinSize: 0
-  HealthCheckGracePeriod: 350
-  HealthCheckType: ELB
-  LaunchConfigurationName: !Ref PracticeLaunchTemplate
-  LaunchTemplate:
-    LaunchTemplateSpecification
-  LoadBalancerNames:
-    - String
-  ServiceLinkedRoleARN: String
-  Tags:
-    -
-      Key: Role
-      Value: Test Instance
-  TargetGroupARNs:
-    - String
-  TerminationPolicies:
-    - OldestInstance
-  VPCZoneIdentifier:
-    - subnet-b21aace8
-    - subnet-ca266182
-    - subnet-f2bcc894
+  PracticeASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: CF-Practice
+      Cooldown: String
+      DesiredCapacity: 1
+      MaxSize: 2
+      MinSize: 0
+      HealthCheckGracePeriod: 350
+      HealthCheckType: ELB
+      LaunchConfigurationName: !Ref PracticeLaunchTemplate
+      LaunchTemplate:
+        LaunchTemplateSpecification
+      LoadBalancerNames:
+        - String
+      ServiceLinkedRoleARN: String
+      Tags:
+        -
+          Key: Role
+          Value: Test Instance
+      TargetGroupARNs:
+        - String
+      TerminationPolicies:
+        - OldestInstance
+      VPCZoneIdentifier:
+        - subnet-b21aace8
+        - subnet-ca266182
+        - subnet-f2bcc894
