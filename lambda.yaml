@@ -17,7 +17,9 @@ Resources:
         ZipFile: |
           import json
           import boto3
+          import os
           from boto3.dynamodb.conditions import Key, Attr
+          from botocore.exceptions import ClientError
 
           #always start with the lambda_handler
           def lambda_handler(event, context):
@@ -26,7 +28,8 @@ Resources:
               dynamodb = boto3.resource('dynamodb')
 
               # select the table
-              table = dynamodb.Table("clients")
+              tablename = os.environ['TABLE_NAME']
+              table = dynamodb.Table(tablename)
 
               try:
                   response = table.get_item(
