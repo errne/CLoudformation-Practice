@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Metadata:
+  License: Apache-2.0
+Description: Creates a lambda function.
+Parameters:
+  TableName:
+    Type: String
+    Description: Name of the dynamodb table
+    MinLength: 1
+    Default: clients
+
+Resources:
+  PythonLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          from boto3.dynamodb.conditions import Key, Attr
+
+          #always start with the lambda_handler
+          def lambda_handler(event, context):
+
+              # make the connection to dynamodb
+              dynamodb = boto3.resource('dynamodb')
+
+              # select the table
+              table = dynamodb.Table("clients")
+
+              try:
+                  response = table.get_item(
+                  Key={"id": event['id']}
+                  )
+              except ClientError as e:
+                  print(e.response['Error']['Message'])
+              else:
+                  item = response['Item']
+              return {
+                'message': "Get Item succeeded!"
+                }
+
+      Description: Gets an item from DynamoDB table.
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref "TableName"
+      FunctionName: GetOneItem
+      Handler: index.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - "LambdaRole"
+          - "Arn"
+      Runtime: python3.7
+      Tags:
+        - Key: Name
+          Value: GetOneItem
+
+  LambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: AllowGetforLambda
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Description: "Allows lambda access dynamodb."
+      Policies:
+        - PolicyName: AllowGetfromDynamoDB
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:GetItem"
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: '*'
